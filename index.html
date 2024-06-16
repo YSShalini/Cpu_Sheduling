@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Scheduling Simulator</title>
+    <style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: url('bg.jpg'); 
+    background-size: cover; 
+    background-position: center; 
+    background-attachment: fixed; 
+}
+body::before {
+    content: '';
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); 
+    z-index: -1; 
+}
+.container {
+    background-color: rgba(69, 65, 65, 0.3); 
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    max-width: 600px;
+    margin: 150px auto; 
+    text-align: center;
+}
+
+        h1 {
+            text-align: center;
+            color:#beb2b2
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color:#fff;
+           
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            background-color: rgba(58, 56, 56, 0.0); 
+           color:#ffffff;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(58, 56, 56, 0.0); 
+            color: #fff;
+            font-weight:600;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #inputFields {
+            margin-bottom: 20px;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(58, 56, 56, 0.0); 
+             border: 1px solid #00acc1;
+        }
+
+select#algorithm {
+    padding: 8px; 
+    font-size: 16px; 
+    border: 1px solid #ccc; 
+    width: 100%; 
+    max-width: 200px; 
+    appearance: none; 
+    background-color: rgba(58, 56, 56, 0.0); 
+            color: #ffffff; 
+    cursor: pointer;
+    transition: border-color 0.3s ease; 
+
+}
+
+select#algorithm:hover,
+select#algorithm:focus {
+    border-color: #4CAF50; 
+}
+
+select#algorithm option {
+    background-color: rgba(58, 56, 56, 0.0); 
+            color: #000000; 
+}
+
+#inputFields {
+    margin-top: 50px; 
+    padding: 10px; 
+}
+
+#inputFields label {
+    display: inline-block;
+    width: 120px; 
+    margin-right: 10px;
+    text-align: right;
+}
+
+#inputFields input {
+    padding: 5px;
+    width: 80px; 
+    margin-right: 10px;
+}
+
+#inputFields h3 {
+    margin-bottom: 5px; 
+    color: #fff;
+}
+
+#result {
+    margin-top: 20px; 
+    background-color: rgba(255, 255, 255, 0.7); 
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto; 
+    text-align: left;
+}
+
+#result h3 {
+    margin-bottom: 10px; 
+}
+
+#result p {
+    margin-bottom: 5px; 
+}
+
+table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <label for="numProcesses">Number of Processes:</label>
+            <input type="number" id="numProcesses" min="1" value="5">
+        </div>
+        <div class="input-group">
+            <label for="algorithm">Scheduling Algorithm:</label>
+            <select id="algorithm">
+                <option value="fcfs">FCFS</option>
+                <option value="sjf">SJF</option>
+                <option value="srtf">SRTF</option>
+                <option value="rr">Round Robin</option>
+            </select>
+        </div>
+        <div class="input-group" id="quantumGroup" style="display: none;">
+            <label for="quantum">Quantum (for Round Robin):</label>
+            <input type="number" id="quantum" min="1" value="1">
+        </div>
+        <button onclick="generateInputFields()">Generate Fields</button>
+        <form id="inputForm" onsubmit="simulateScheduling(event)">
+            <div id="inputFields"></div>
+            <button type="submit">Simulate</button>
+        </form>
+        <div id="result"></div>
+    </div>
+    <script>
+        document.getElementById('algorithm').addEventListener('change', function() {
+            const quantumGroup = document.getElementById('quantumGroup');
+            if (this.value === 'rr') {
+                quantumGroup.style.display = 'block';
+            } else {
+                quantumGroup.style.display = 'none';
+            }
+        });
+
+        function generateInputFields() {
+            const numProcesses = document.getElementById('numProcesses').value;
+            const inputFields = document.getElementById('inputFields');
+            inputFields.innerHTML = '';
+
+            for (let i = 1; i <=numProcesses; i++) {
+                inputFields.innerHTML += `<h3>Process ${i}</h3>`;
+                inputFields.innerHTML += `<div class="input-group"><label for="arrival${i}">Arrival Time:</label><input type="number" id="arrival${i}" value="0"></div>`;
+                inputFields.innerHTML += `<div class="input-group"><label for="burst${i}">Burst Time:</label><input type="number" id="burst${i}" value="1"></div>`;
+            }
+        }
+
+        function simulateScheduling(event) {
+            event.preventDefault();
+            
+            const numProcesses = document.getElementById('numProcesses').value;
+            const algorithm = document.getElementById('algorithm').value;
+            let processes = [];
+
+            for (let i = 1; i <=numProcesses; i++) {
+                let arrival = parseInt(document.getElementById(`arrival${i}`).value);
+                let burst = parseInt(document.getElementById(`burst${i}`).value);
+                processes.push({ id: i, arrival: arrival, burst: burst, remaining: burst });
+            }
+
+            let results = [];
+            if (algorithm === 'fcfs') {
+                results = simulateFCFS(processes);
+            } else if (algorithm === 'sjf') {
+                results = simulateSJF(processes);
+            } else if (algorithm === 'srtf') {
+                results = simulateSRTF(processes);
+            } else if (algorithm === 'rr') {
+                const quantum = parseInt(document.getElementById('quantum').value);
+                results = simulateRR(processes, quantum);
+            }
+
+            displayResults(results);
+        }
+
+        function simulateFCFS(processes) {
+    processes.sort((a, b) => a.arrival - b.arrival);
+    let currentTime = 0;
+    let results = [];
+    processes.forEach(process => {
+        let start = Math.max(currentTime, process.arrival);
+        let finish = start + process.burst;
+        let turnaround = finish - process.arrival;
+        let waiting = turnaround - process.burst;
+        results.push({ id: process.id, start: start, finish: finish, turnaround: turnaround, waiting: waiting });
+        currentTime = finish;
+    });
+    return results;
+}
+
+function simulateSJF(processes) {
+    processes.sort((a, b) => a.arrival - b.arrival || a.burst - b.burst);
+    let currentTime = 0;
+    let results = [];
+    while (processes.length > 0) {
+        let availableProcesses = processes.filter(p => p.arrival <= currentTime);
+        if (availableProcesses.length === 0) {
+            currentTime = processes[0].arrival;
+            availableProcesses = [processes[0]];
+        }
+        availableProcesses.sort((a, b) => a.burst - b.burst);
+        let process = availableProcesses[0];
+        let start = Math.max(currentTime, process.arrival);
+        let finish = start + process.burst;
+        let turnaround = finish - process.arrival;
+        let waiting = turnaround - process.burst;
+        results.push({ id: process.id, start: start, finish: finish, turnaround: turnaround, waiting: waiting });
+        currentTime = finish;
+        processes = processes.filter(p => p.id !== process.id);
+    }
+    return results;
+}
+
+function simulateSRTF(processes) {
+    processes.sort((a, b) => a.arrival - b.arrival);
+    let currentTime = 0;
+    let results = [];
+    let executedProcesses = new Set();
+    
+    while (executedProcesses.size < processes.length) {
+        let availableProcesses = processes.filter(p => p.arrival <= currentTime && !executedProcesses.has(p.id));
+        if (availableProcesses.length === 0) {
+            currentTime++;
+            continue;
+        }
+        availableProcesses.sort((a, b) => a.remaining - b.remaining);
+        let currentProcess = availableProcesses[0];
+        
+        currentProcess.remaining--;
+        if (currentProcess.remaining === 0) {
+            let turnaround = currentTime + 1 - currentProcess.arrival;
+            let waiting = turnaround - currentProcess.burst;
+            results.push({ id: currentProcess.id, start: currentTime - currentProcess.burst + 1, finish: currentTime + 1, turnaround: turnaround, waiting: waiting });
+            executedProcesses.add(currentProcess.id);
+        }
+        currentTime++;
+    }
+    return results;
+}
+
+function simulateRR(processes, quantum) {
+    let currentTime = 0;
+    let results = [];
+    let queue = [];
+    processes.sort((a, b) => a.arrival - b.arrival);
+    let currentProcess = null;
+    while (processes.length > 0 || queue.length > 0 || currentProcess) {
+        while (processes.length > 0 && processes[0].arrival <= currentTime) {
+            queue.push(processes.shift());
+        }
+        if (currentProcess) {
+            queue.push(currentProcess);
+        }
+        if (queue.length > 0) {
+            currentProcess = queue.shift();
+            let executionTime = Math.min(quantum, currentProcess.remaining);
+            currentProcess.remaining -= executionTime;
+            currentTime += executionTime;
+            if (currentProcess.remaining === 0) {
+                let turnaround = currentTime - currentProcess.arrival;
+                let waiting = turnaround - currentProcess.burst;
+                results.push({ id: currentProcess.id, start: currentTime - currentProcess.burst, finish: currentTime, turnaround: turnaround, waiting: waiting });
+                currentProcess = null;
+            }
+        } else {
+            currentTime++;
+        }
+    }
+    return results;
+}
+
+function displayResults(results) {
+    const resultDiv = document.getElementById('result');
+    let totalTurnaround = 0;
+    let totalWaiting = 0;
+
+    let tableHTML = `<h3>Schedule:</h3>
+                     <table>
+                         <tr>
+                             <th>Process ID</th>
+                             <th>Start Time</th>
+                             <th>Finish Time</th>
+                             <th>Turnaround Time</th>
+                             <th>Waiting Time</th>
+                         </tr>`;
+    results.forEach(result => {
+        tableHTML += `<tr>
+                          <td>${result.id}</td>
+                          <td>${result.start}</td>
+                          <td>${result.finish}</td>
+                          <td>${result.turnaround}</td>
+                          <td>${result.waiting}</td>
+                      </tr>`;
+        totalTurnaround += result.turnaround;
+        totalWaiting += result.waiting;
+    });
+
+    let avgTurnaround = (totalTurnaround / results.length).toFixed(2);
+    let avgWaiting = (totalWaiting / results.length).toFixed(2);
+
+    tableHTML += `</table>
+                  <p>Average Turnaround Time: ${avgTurnaround}</p>
+                  <p>Average Waiting Time: ${avgWaiting}</p>`;
+    resultDiv.innerHTML = tableHTML;
+}
+    </script>
+</body>
+</html>
